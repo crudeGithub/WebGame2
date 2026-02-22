@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hexa Sort 3D</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div id="game-ui">
+        <div class="header">
+            <div class="score-container">
+                <span class="score-icon">🏆</span>
+                <span id="score">0</span>
+            </div>
+            <div class="level-container">
+                <div class="level-text">Level <span id="level">1</span></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress"></div>
+                </div>
+            </div>
+            <div class="settings-btn">⚙️</div>
+        </div>
+
+        <div id="game-over" class="hidden">
+            <h1>Level Complete!</h1>
+            <p>Score: <span id="final-score">0</span></p>
+            <button id="next-level-btn">Next Level</button>
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="main.js"></script>
+</body>
+
+</html>
