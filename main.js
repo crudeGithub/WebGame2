@@ -63,12 +63,12 @@ const HEX_WIDTH = Math.sqrt(3) * HEX_RADIUS;
 const HEX_Y_OFFSET = HEX_RADIUS * 1.5; // vertical distance between rows
 
 const COLORS = [
-    0xff007b, // Pink
-    0x00d4ff, // Cyan
-    0xffcc00, // Yellow
-    0x00ff73, // Green
-    0xff7a00, // Orange
-    0x9d00ff  // Purple
+    0x00f0ff, // Bright Cyan (from first ref)
+    0xd52bff, // Bright Purple (from first ref)
+    0x39e639, // Bright Green (from first ref)
+    0xff2a2a, // Red (from second ref)
+    0xffaa00, // Orange
+    0x0088ff  // Blue
 ];
 
 let score = 0;
@@ -83,14 +83,14 @@ const board = new Map(); // key: "q,r", value: { tileMesh, stackInfo[] }
 // THREE.JS SETUP
 // ==========================================
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1a2e);
-scene.fog = new THREE.Fog(0x1a1a2e, 20, 100);
+// Background handles by CSS now
+scene.fog = new THREE.FogExp2(0x76d4f9, 0.015);
 
 // Isometric Orthographic Camera
 const aspect = window.innerWidth / window.innerHeight;
 const d = 20;
 const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
-camera.position.set(0, 40, 30); // 45 degree top-down view
+camera.position.set(0, 60, 15); // Steeper 75+ degree top-down view instead of 45
 camera.lookAt(scene.position);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -103,10 +103,10 @@ document.body.appendChild(renderer.domElement);
 // ==========================================
 // LIGHTING
 // ==========================================
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.85); // Brighter ambient
 scene.add(ambientLight);
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.4); // Softer directional
 dirLight.position.set(10, 20, 10);
 dirLight.castShadow = true;
 dirLight.shadow.camera.left = -d;
@@ -118,23 +118,24 @@ dirLight.shadow.mapSize.width = 2048;
 dirLight.shadow.mapSize.height = 2048;
 scene.add(dirLight);
 
-const fillLight = new THREE.DirectionalLight(0xaaccff, 0.3);
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.2); // White fill instead of blue
 fillLight.position.set(-10, 10, -10);
 scene.add(fillLight);
 
-// ==========================================
-// GEOMETRY & MATERIALS
-// ==========================================
-// CylinderGeometry(radiusTop, radiusBottom, height, radialSegments)
+// Hex geometry for base board
 const hexGeometry = new THREE.CylinderGeometry(HEX_RADIUS, HEX_RADIUS, HEX_HEIGHT, 6);
-// Rotate so flat sides are bounding
 hexGeometry.rotateY(Math.PI / 6);
 
+// Base Tile Material (Light Blue-Grey)
 const tileMaterial = new THREE.MeshStandardMaterial({
-    color: 0x333344,
-    roughness: 0.7,
+    color: 0xcadeed, // Light blueish-grey from the reference board
+    roughness: 0.6,
     metalness: 0.1,
 });
+
+// Hex geometry for pieces (slightly smaller radius for stacking gaps)
+const pieceGeometry = new THREE.CylinderGeometry(HEX_RADIUS * 0.95, HEX_RADIUS * 0.95, HEX_HEIGHT * 0.8, 6);
+pieceGeometry.rotateY(Math.PI / 6);
 
 // ==========================================
 // BOARD GENERATION
@@ -176,7 +177,8 @@ function createTile(q, r) {
         mesh: tile,
         x, z,
         stack: [],
-        isSorting: false
+        isSorting: false,
+        pending: false
     });
 }
 
@@ -212,9 +214,9 @@ let originalPosition = new THREE.Vector3();
 const options = [null, null, null];
 // We position the slots in world space at the bottom front
 const SLOT_POSITIONS = [
-    new THREE.Vector3(-10, 0.5, 20),
-    new THREE.Vector3(0, 0.5, 20),
-    new THREE.Vector3(10, 0.5, 20)
+    new THREE.Vector3(-10, 0.5, 12),
+    new THREE.Vector3(0, 0.5, 12),
+    new THREE.Vector3(10, 0.5, 12)
 ];
 
 function generateRandomStack(size = 5) {
@@ -244,19 +246,29 @@ function spawnOptions() {
 
             // Render the stack
             stackColors.forEach((color, index) => {
-                const mat = new THREE.MeshStandardMaterial({
+                const mat = new THREE.MeshPhysicalMaterial({
                     color: color,
-                    roughness: 0.4,
-                    metalness: 0.2, // slightly glossy hexes 
-                    clearcoat: 0.8
+                    roughness: 0.3,
+                    metalness: 0.1,
+                    clearcoat: 0.5,
+                    clearcoatRoughness: 0.2
                 });
-                const piece = new THREE.Mesh(hexGeometry, mat);
+                const piece = new THREE.Mesh(pieceGeometry, mat);
                 piece.position.y = index * HEX_HEIGHT;
                 piece.castShadow = true;
                 piece.receiveShadow = true;
+
+                // Darker bottom edge for depth (faux shadow)
+                const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25 });
+                const shadowGeo = new THREE.CylinderGeometry(HEX_RADIUS * 0.96, HEX_RADIUS * 0.96, HEX_HEIGHT * 0.2, 6);
+                shadowGeo.rotateY(Math.PI / 6);
+                const dropShadow = new THREE.Mesh(shadowGeo, shadowMat);
+                dropShadow.position.y = -HEX_HEIGHT * 0.4;
+                piece.add(dropShadow);
+
                 // Add an edge helper for better definition
-                const edges = new THREE.EdgesGeometry(hexGeometry);
-                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 }));
+                const edges = new THREE.EdgesGeometry(pieceGeometry);
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15 }));
                 piece.add(line);
 
                 group.add(piece);
@@ -285,10 +297,20 @@ spawnOptions();
 window.addEventListener('pointerdown', onPointerDown);
 window.addEventListener('pointermove', onPointerMove);
 window.addEventListener('pointerup', onPointerUp);
+window.addEventListener('pointercancel', onPointerUp);
 
 function getIntersects(event) {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    let clientX = event.clientX;
+    let clientY = event.clientY;
+
+    // Fallback for raw touch events if they somehow slip through without clientX
+    if (clientX === undefined && event.changedTouches && event.changedTouches.length > 0) {
+        clientX = event.changedTouches[0].clientX;
+        clientY = event.changedTouches[0].clientY;
+    }
+
+    mouse.x = (clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
 }
 
@@ -336,9 +358,9 @@ function onPointerMove(event) {
 
         board.forEach(cell => {
             if (cell.mesh === hoverTarget && cell.stack.length === 0) {
-                cell.mesh.material.color.setHex(0x555566); // Highlight
+                cell.mesh.material.color.setHex(0xe6f2ff); // Lighter highlight
             } else {
-                cell.mesh.material.color.setHex(0x333344); // Normal
+                cell.mesh.material.color.setHex(0xcadeed); // Normal light blue-grey
             }
         });
     }
@@ -348,7 +370,7 @@ function onPointerUp(event) {
     document.body.style.cursor = 'default';
     if (draggedGroup) {
         // Reset all highlights
-        board.forEach(cell => cell.mesh.material.color.setHex(0x333344));
+        board.forEach(cell => cell.mesh.material.color.setHex(0xcadeed));
 
         getIntersects(event);
         const intersects = raycaster.intersectObjects(Array.from(board.values()).map(b => b.mesh));
@@ -365,17 +387,25 @@ function onPointerUp(event) {
                 }
             }
 
-            if (targetCell && targetCell.stack.length === 0) {
+            if (targetCell && targetCell.stack.length === 0 && !targetCell.pending) {
                 // Place it here!
                 placed = true;
+                targetCell.pending = true; // Block other tiles from being placed here while animating
+
                 const finalPos = new THREE.Vector3(targetCell.x, HEX_HEIGHT, targetCell.z);
 
                 const pieces = [...draggedGroup.children];
                 const dropAnimations = [];
 
+                // Store references before nullifying to allow immediate next interaction
+                const currentDraggedId = draggedStackId;
+                const currentDraggedGroup = draggedGroup;
+
                 // Hide the original draggedGroup right away to prevent double rendering visually,
                 // but keep data intact until animations finish.
-                draggedGroup.visible = false;
+                currentDraggedGroup.visible = false;
+                draggedStackId = null;
+                draggedGroup = null;
 
                 pieces.forEach((piece, index) => {
                     scene.attach(piece); // Move to world space for animation
@@ -402,18 +432,17 @@ function onPointerUp(event) {
 
                 Promise.all(dropAnimations).then(() => {
                     // Update Board Logic
-                    targetCell.stack = draggedGroup.userData.colors.map(c => ({ color: c }));
+                    targetCell.stack = currentDraggedGroup.userData.colors.map(c => ({ color: c }));
+                    targetCell.pending = false; // Release lock
 
                     // Clean up scene
                     pieces.forEach(p => scene.remove(p));
-                    scene.remove(draggedGroup);
+                    scene.remove(currentDraggedGroup);
 
                     // Rebuild stack on target cell officially
                     rebuildCellStack(targetCell);
 
-                    options[draggedStackId] = null;
-                    draggedStackId = null;
-                    draggedGroup = null;
+                    options[currentDraggedId] = null;
 
                     if (options.every(o => o === null)) {
                         spawnOptions();
@@ -425,20 +454,18 @@ function onPointerUp(event) {
         }
 
         if (!placed) {
+            const groupToReturn = draggedGroup;
+            draggedGroup = null;
+            draggedStackId = null;
+
             // Return to slot
-            gsap.to(draggedGroup.position, {
+            gsap.to(groupToReturn.position, {
                 x: originalPosition.x,
                 y: originalPosition.y,
                 z: originalPosition.z,
                 duration: 0.3,
-                ease: "power2.out",
-                onComplete: () => {
-                    draggedStackId = null;
-                    draggedGroup = null;
-                }
+                ease: "power2.out"
             });
-        } else {
-            // Don't nullify here, wait for animation
         }
     }
 }
@@ -453,17 +480,26 @@ function rebuildCellStack(cell) {
 
     cell.stack.forEach((item, index) => {
         if (!item.mesh) {
-            const mat = new THREE.MeshStandardMaterial({
+            const mat = new THREE.MeshPhysicalMaterial({
                 color: item.color,
-                roughness: 0.4,
-                metalness: 0.2,
-                clearcoat: 0.8
+                roughness: 0.3,
+                metalness: 0.1,
+                clearcoat: 0.5,
+                clearcoatRoughness: 0.2
             });
-            const piece = new THREE.Mesh(hexGeometry, mat);
+            const piece = new THREE.Mesh(pieceGeometry, mat);
             piece.castShadow = true;
             piece.receiveShadow = true;
-            const edges = new THREE.EdgesGeometry(hexGeometry);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 }));
+
+            const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25 });
+            const shadowGeo = new THREE.CylinderGeometry(HEX_RADIUS * 0.96, HEX_RADIUS * 0.96, HEX_HEIGHT * 0.2, 6);
+            shadowGeo.rotateY(Math.PI / 6);
+            const dropShadow = new THREE.Mesh(shadowGeo, shadowMat);
+            dropShadow.position.y = -HEX_HEIGHT * 0.4;
+            piece.add(dropShadow);
+
+            const edges = new THREE.EdgesGeometry(pieceGeometry);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15 }));
             piece.add(line);
             item.mesh = piece;
         }
@@ -508,7 +544,8 @@ function updateScore(points) {
 
 function levelComplete() {
     document.getElementById('game-over').classList.remove('hidden');
-    document.getElementById('final-score').innerText = score;
+    document.getElementById('win-level').innerText = level;
+    createConfetti();
 }
 
 document.getElementById('next-level-btn').addEventListener('click', () => {
@@ -528,6 +565,46 @@ document.getElementById('next-level-btn').addEventListener('click', () => {
         cell.stack = [];
     });
 });
+
+function createConfetti() {
+    const colors = ['#00f0ff', '#d52bff', '#39e639', '#ffaa00', '#ff2a2a'];
+    for (let i = 0; i < 80; i++) {
+        const conf = document.createElement('div');
+        conf.style.position = 'absolute';
+        conf.style.width = '12px';
+        conf.style.height = '12px';
+        conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        conf.style.left = '50%';
+        conf.style.top = '50%';
+        conf.style.zIndex = '1000';
+        conf.style.pointerEvents = 'none';
+
+        let shape = Math.random();
+        if (shape < 0.3) {
+            conf.style.borderRadius = '50%';
+        } else if (shape < 0.6) {
+            conf.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
+        }
+
+        document.body.appendChild(conf);
+
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = 50 + Math.random() * 300;
+        const tx = Math.cos(angle) * velocity;
+        const ty = Math.sin(angle) * velocity - 150; // Bias upwards
+
+        gsap.to(conf, {
+            x: tx,
+            y: ty,
+            rotation: Math.random() * 720 - 360,
+            duration: 1 + Math.random(),
+            ease: "power2.out",
+            opacity: 0,
+            delay: Math.random() * 0.2,
+            onComplete: () => conf.remove()
+        });
+    }
+}
 
 async function triggerSort(startCell) {
     if (startCell.stack.length === 0 || startCell.isSorting) return;

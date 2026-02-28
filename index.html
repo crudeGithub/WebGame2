@@ -13,23 +13,27 @@
 <body>
     <div id="game-ui">
         <div class="header">
-            <div class="score-container">
-                <span class="score-icon">🏆</span>
-                <span id="score">0</span>
-            </div>
-            <div class="level-container">
-                <div class="level-text">Level <span id="level">1</span></div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress"></div>
+            <div class="hud-left">
+                <div class="level-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress"></div>
+                    </div>
+                    <div class="level-icon-wrapper">
+                        <div class="level-hex"><span id="level">1</span></div>
+                    </div>
+                    <div class="level-text"><span id="score">0</span></div>
                 </div>
             </div>
-            <div class="settings-btn">⚙️</div>
         </div>
 
         <div id="game-over" class="hidden">
-            <h1>Level Complete!</h1>
-            <p>Score: <span id="final-score">0</span></p>
-            <button id="next-level-btn">Next Level</button>
+            <div class="win-card-header">
+                <div class="win-title-pill">NICE JOB!</div>
+            </div>
+            <div class="win-card-body">
+                <h2>LEVEL <span id="win-level">1</span><br>COMPLETED!</h2>
+                <button id="next-level-btn">CONTINUE</button>
+            </div>
         </div>
 
     </div>
