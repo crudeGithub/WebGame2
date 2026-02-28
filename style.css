@@ -166,7 +166,8 @@ html {
 
 
 /* Game Over Screen (Card Style) */
-#game-over {
+#game-over,
+#game-lose {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -182,7 +183,8 @@ html {
     align-items: center;
 }
 
-#game-over.hidden {
+#game-over.hidden,
+#game-lose.hidden {
     opacity: 0;
     transform: translate(-50%, -40%) scale(0.9);
     pointer-events: none;
@@ -229,6 +231,18 @@ html {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2), inset 0 2px 5px rgba(255, 255, 255, 0.5);
 }
 
+.lose-title-pill {
+    background: linear-gradient(180deg, #fa4c2d 0%, #e81a1a 100%);
+    border: 3px solid #940b0b;
+    border-radius: 25px;
+    padding: 10px 30px;
+    color: white;
+    font-weight: 900;
+    font-size: 1.2rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2), inset 0 2px 5px rgba(255, 255, 255, 0.5);
+}
+
 .win-card-body {
     background: #ffffff;
     border: 4px solid #302b63;
@@ -265,6 +279,27 @@ html {
 }
 
 #next-level-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.2), inset 0 2px 5px rgba(255, 255, 255, 0.4);
+}
+
+#restart-lvl-btn {
+    background: linear-gradient(180deg, #ff6b6b 0%, #d62d2d 100%);
+    border: 3px solid #8c0c0c;
+    border-radius: 50px;
+    padding: 15px 40px;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2), inset 0 2px 5px rgba(255, 255, 255, 0.4);
+    transition: transform 0.1s;
+    outline: none;
+    width: 100%;
+    letter-spacing: 1px;
+}
+
+#restart-lvl-btn:active {
     transform: translateY(4px);
     box-shadow: 0 4px 5px rgba(0, 0, 0, 0.2), inset 0 2px 5px rgba(255, 255, 255, 0.4);
 }

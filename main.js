@@ -448,7 +448,14 @@ function onPointerUp(event) {
                         spawnOptions();
                     }
 
-                    triggerSort(targetCell);
+                    triggerSort(targetCell).then(() => {
+                        // Check if the board is full after all sorting and merges finish
+                        if (checkGameOver()) {
+                            setTimeout(() => {
+                                document.getElementById('game-lose').classList.remove('hidden');
+                            }, 500);
+                        }
+                    });
                 });
             }
         }
@@ -565,6 +572,39 @@ document.getElementById('next-level-btn').addEventListener('click', () => {
         cell.stack = [];
     });
 });
+
+document.getElementById('restart-lvl-btn').addEventListener('click', () => {
+    // Keep same level and target
+    progress = 0;
+    score = 0;
+    document.getElementById('score').innerText = score;
+    document.getElementById('progress').style.width = '0%';
+    document.getElementById('game-lose').classList.add('hidden');
+
+    // clear board
+    board.forEach(cell => {
+        if (cell.meshGroup) {
+            scene.remove(cell.meshGroup);
+            cell.meshGroup = null;
+        }
+        cell.stack = [];
+    });
+
+    // Spawn fresh options
+    spawnOptions();
+});
+
+function checkGameOver() {
+    // If there is ANY empty cell on the board, game is not over
+    for (let cell of board.values()) {
+        if (cell.stack.length === 0) {
+            return false;
+        }
+    }
+
+    // If all cells are full, game is over (lose)
+    return true;
+}
 
 function createConfetti() {
     const colors = ['#00f0ff', '#d52bff', '#39e639', '#ffaa00', '#ff2a2a'];
