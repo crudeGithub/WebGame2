@@ -90,7 +90,7 @@ scene.fog = new THREE.FogExp2(0x76d4f9, 0.015);
 const aspect = window.innerWidth / window.innerHeight;
 const d = 20;
 const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
-camera.position.set(0, 60, 15); // Steeper 75+ degree top-down view instead of 45
+camera.position.set(0, 50, 25); // Adjusted angle to be slightly lower and less purely top-down
 camera.lookAt(scene.position);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -214,9 +214,9 @@ let originalPosition = new THREE.Vector3();
 const options = [null, null, null];
 // We position the slots in world space at the bottom front
 const SLOT_POSITIONS = [
-    new THREE.Vector3(-10, 0.5, 12),
+    new THREE.Vector3(-6, 0.5, 12),
     new THREE.Vector3(0, 0.5, 12),
-    new THREE.Vector3(10, 0.5, 12)
+    new THREE.Vector3(6, 0.5, 12)
 ];
 
 function generateRandomStack(size = 5) {
